@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibration App (Diagnóstico 2-Vías)</title>
+    <title>Vibration App (Versión Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -21,12 +21,18 @@
 
     <div class="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
         <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">Diagnóstico de Vibración</h1>
-            <p class="text-gray-500 text-sm mt-1">Prueba con comunicación de 2 vías.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Aplicación de Vibración</h1>
+            <p class="text-gray-500 text-sm mt-1">Versión Final (Múltiples Notificaciones)</p>
         </div>
 
         <div id="status-box" class="mb-6 p-3 rounded bg-gray-200 text-center text-gray-700">
             Inicializando...
+        </div>
+
+        <!-- Panel de Ayuda (se muestra si el permiso está OK) -->
+        <div id="ayuda-vibracion" class="hidden mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
+            <h4 class="font-bold">¿No vibra?</h4>
+            <p class="text-sm mt-1">Si la app tiene permiso pero no vibra, es probable que la vibración esté desactivada para este sitio. Toca la notificación y activa el interruptor de "Vibración" en los ajustes de Android.</p>
         </div>
 
         <div class="mb-6">
@@ -45,6 +51,7 @@
         const vibrateBtn = document.getElementById('vibrate-button');
         const statusBox = document.getElementById('status-box');
         const eventLog = document.getElementById('event-log');
+        const helpBox = document.getElementById('ayuda-vibracion');
 
         function log(message, isError = false) {
             const time = new Date().toLocaleTimeString();
@@ -72,7 +79,7 @@
                 const message = event.data;
                 if (message && message.type === 'vibration_reply') {
                     if (message.success) {
-                        log('Respuesta del SW: ¡Notificación de vibración enviada con éxito!');
+                        log('Respuesta del SW: ¡Vibración enviada con éxito!');
                     } else {
                         log(`Respuesta del SW: ¡ERROR! ${message.error}`, true);
                     }
@@ -89,6 +96,7 @@
                 statusBox.textContent = '✅ Permiso concedido. ¡Listo!';
                 vibrateBtn.disabled = false;
                 vibrateBtn.classList.remove('btn-disabled');
+                helpBox.classList.remove('hidden'); // <-- Muestra la ayuda
                 log('Permiso de notificación ya concedido.');
             } else if (permission === 'default') {
                 log('Permiso no solicitado. Pidiendo ahora...');
@@ -102,7 +110,7 @@
         
         vibrateBtn.addEventListener('click', () => {
             if (navigator.serviceWorker.controller) {
-                log('Enviando mensaje al Service Worker para vibrar...');
+                log('Enviando mensaje al SW para vibrar...');
                 navigator.serviceWorker.controller.postMessage('vibrate');
             } else {
                 log('Error: No se pudo comunicar con el SW.', true);
