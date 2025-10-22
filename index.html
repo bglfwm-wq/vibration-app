@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibración con Service Worker</title>
+    <title>Módulo de Notificación</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -31,8 +31,8 @@
 
     <div class="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
         <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">Vibración con Service Worker</h1>
-            <p class="text-gray-500 text-sm mt-1">La solución definitiva.</p>
+            <h1 class="text-2xl font-bold text-gray-800">Módulo de Alerta</h1>
+            <p class="text-gray-500 text-sm mt-1">Prueba de notificaciones</p>
         </div>
 
         <!-- Caja de Diagnóstico -->
@@ -43,32 +43,32 @@
         <!-- Botón Principal -->
         <div class="mb-6">
             <button id="vibrate-button" class="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg btn-disabled" disabled>
-                Vibrar Ahora
+                Enviar Alerta
             </button>
         </div>
         
         <!-- === ESTE ES EL CAMBIO === -->
-        <!-- Menú de Ayuda Desplegable -->
+        <!-- Menú de Ayuda Desplegable (Texto Genérico) -->
         <div id="ayuda-container" class="hidden">
             <details class="bg-yellow-100 rounded-md border border-yellow-300">
-                <!-- Este es el nuevo título de la alerta -->
+                <!-- Título genérico -->
                 <summary class="p-3 font-semibold text-yellow-900 flex items-center">
-                    <span class="text-xl mr-2">⚠️</span>
+                    <span class="text-xl mr-2">🔔</span>
                     <span class="flex-1">
-                        <b>Alerta:</b> ¿No vibra? Toca aquí para ver la ayuda.
+                        <b>Ayuda:</b> ¿La notificación es silenciosa?
                     </span>
                     <span class="text-xs font-normal ml-2">(Presiona)</span>
                 </summary>
                 
-                <!-- Este es el contenido que se despliega -->
+                <!-- Contenido genérico -->
                 <div class="p-3 border-t border-yellow-300 text-xs text-gray-700 space-y-2">
-                    <p>Si la notificación aparece pero no vibra, es por los ajustes de tu teléfono.</p>
-                    <p class="font-semibold">La ruta más rápida (en Chrome):</p>
+                    <p>Para asegurar que las alertas de esta app vibren o suenen, debes revisar los permisos del sitio.</p>
+                    <p class="font-semibold">Ruta rápida (en Chrome):</p>
                     <ol class="list-decimal list-inside space-y-1">
                         <li>Toca el candado (🔒) en la barra de direcciones.</li>
                         <li>Toca <b class="text-black">"Permisos"</b> (o "Configuración de sitios").</li>
                         <li>Toca <b class="text-black">"Notificaciones"</b>.</li>
-                        <li>Activa el interruptor de <b class="text-black">"Vibración"</b>.</li>
+                        <li>Activa el interruptor de <b class="text-black">"Vibración"</b> y "Sonido".</li>
                     </ol>
                 </div>
             </details>
@@ -103,10 +103,16 @@
             log('Iniciando registro de Service Worker (SW)...');
             if ('serviceWorker' in navigator) {
                 try {
-                    const registration = await navigator.serviceWorker.register('sw.js');
+                    // Forzamos la actualización del SW en cada carga para desarrollo
+                    const registration = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
                     serviceWorker = registration.active || registration.waiting || registration.installing;
                     log('Service Worker registrado.');
+                    
+                    // Esperamos a que el SW esté activo
+                    await navigator.serviceWorker.ready;
+                    log('Service Worker listo y controlando.');
                     checkNotificationPermission();
+
                 } catch (error) {
                     log(`Error en registro de SW: ${error.message}`);
                     diagnosticBox.innerHTML = `<div class="bg-red-100 text-red-700 p-3 rounded"><p><b>Error Crítico:</b> No se pudo registrar el SW.</p></div>`;
@@ -144,6 +150,9 @@
                 });
             } else {
                 log('Error: El Service Worker no está controlando la página.');
+                // Intenta recargar la página si el SW no está activo
+                log('Intentando recargar para activar el SW...');
+                location.reload();
             }
         });
 
