@@ -8,8 +8,8 @@ self.addEventListener('message', event => {
 
         const promise = self.registration.showNotification(title, {
             body: body,
-            // Esta línea busca el archivo 'badge.png' que subiste
-            badge: 'badge.png'
+            badge: 'badge.png', 
+            icon: 'badge.png'
         });
 
         promise.then(() => {
