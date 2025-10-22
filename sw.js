@@ -1,8 +1,7 @@
 self.addEventListener('message', event => {
     if (event.data === 'vibrate') {
         const promise = self.registration.showNotification('Vibración', {
-            vibrate: [200, 100, 300, 100, 200],
-            tag: 'vibration-test'
+            vibrate: [200, 100, 300, 100, 200]
         });
 
         promise.then(() => {
