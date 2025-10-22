@@ -2,7 +2,6 @@ self.addEventListener('message', event => {
     if (event.data === 'vibrate') {
         const promise = self.registration.showNotification('Vibración', {
             vibrate: [200, 100, 300, 100, 200],
-            silent: true,
             tag: 'vibration-test'
         });
 
@@ -30,5 +29,3 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     event.waitUntil(self.clients.claim());
 });
-
-
