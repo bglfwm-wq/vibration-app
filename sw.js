@@ -1,15 +1,18 @@
 self.addEventListener('message', event => {
     const data = event.data;
 
-    if (data && data.type === 'vibrate') {
-        const promise = self.registration.showNotification('¡Vibración!', {
-            vibrate: data.pattern 
+    if (data && data.type === 'show_alert_notification') {
+        
+        // El emoji 🎃 se añade directamente al título
+        const promise = self.registration.showNotification('🎃 ¡Llamada a Votación!', {
+            body: 'Prepárate, eres el siguiente. ¡Tu turno!',
+            // La propiedad 'icon' se elimina, ya no es necesaria
         });
 
         promise.then(() => {
-            replyToClients({ type: 'vibration_reply', success: true });
+            replyToClients({ type: 'notification_reply', success: true });
         }).catch(err => {
-            replyToClients({ type: 'vibration_reply', success: false, error: err.message });
+            replyToClients({ type: 'notification_reply', success: false, error: err.message });
         });
     }
 });
