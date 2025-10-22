@@ -15,15 +15,14 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Estilos para el menú desplegable */
         details > summary {
             cursor: pointer;
-            list-style: none; /* Quita la flecha por defecto */
+            list-style: none;
         }
         details > summary::-webkit-details-marker {
-            display: none; /* Quita la flecha en Chrome */
+            display: none;
         }
-        #ayuda-vibracion[open] {
+        #ayuda-container[open] {
             animation: fadeIn 0.5s ease-out;
         }
     </style>
@@ -50,12 +49,15 @@
         
         <!-- === ESTE ES EL CAMBIO === -->
         <!-- Menú de Ayuda Desplegable -->
-        <!-- Está oculto por defecto y el JS lo mostrará si el permiso está concedido -->
         <div id="ayuda-container" class="hidden">
             <details class="bg-yellow-100 rounded-md border border-yellow-300">
-                <!-- Este es el texto corto en el que harás clic -->
-                <summary class="p-3 font-semibold text-yellow-800">
-                    ⚠️ ¿No vibra? Haz clic aquí para ver la ayuda.
+                <!-- Este es el nuevo título de la alerta -->
+                <summary class="p-3 font-semibold text-yellow-900 flex items-center">
+                    <span class="text-xl mr-2">⚠️</span>
+                    <span class="flex-1">
+                        <b>Alerta:</b> ¿No vibra? Toca aquí para ver la ayuda.
+                    </span>
+                    <span class="text-xs font-normal ml-2">(Presiona)</span>
                 </summary>
                 
                 <!-- Este es el contenido que se despliega -->
@@ -86,7 +88,7 @@
         const vibrateButton = document.getElementById('vibrate-button');
         const diagnosticBox = document.getElementById('diagnostic-box');
         const eventLog = document.getElementById('event-log');
-        const ayudaContainer = document.getElementById('ayuda-container'); // Apuntamos al nuevo contenedor
+        const ayudaContainer = document.getElementById('ayuda-container');
         let serviceWorker;
 
         function log(message) {
@@ -121,7 +123,6 @@
                     diagnosticBox.innerHTML = `<div class="bg-green-100 text-green-800 p-3 rounded"><p><b>Estado:</b> ✅ Permiso concedido. ¡Listo!</p></div>`;
                     vibrateButton.disabled = false;
                     vibrateButton.classList.remove('btn-disabled');
-                    // Mostramos el contenedor del menú de ayuda
                     ayudaContainer.classList.remove('hidden'); 
                     log('Permiso de notificación ya concedido.');
                 } else if (permission === 'denied') {
