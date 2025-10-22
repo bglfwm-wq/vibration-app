@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibration App (Versión Final)</title>
+    <title>Vibración con Service Worker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .btn:active { transform: scale(0.97); }
         .btn-disabled { cursor: not-allowed; opacity: 0.5; }
-        .log-entry { animation: fadeIn 0.5s ease-in-out; }
+        .log-entry { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        #ayuda-vibracion {
+            animation: fadeIn 0.5s ease-out 0.5s;
+            animation-fill-mode: forwards;
+            opacity: 0;
         }
     </style>
 </head>
@@ -21,102 +26,124 @@
 
     <div class="w-full max-w-lg mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
         <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">Aplicación de Vibración</h1>
-            <p class="text-gray-500 text-sm mt-1">Versión Final (Múltiples Notificaciones)</p>
+            <h1 class="text-2xl font-bold text-gray-800">Vibración con Service Worker</h1>
+            <p class="text-gray-500 text-sm mt-1">La solución definitiva.</p>
         </div>
 
-        <div id="status-box" class="mb-6 p-3 rounded bg-gray-200 text-center text-gray-700">
-            Inicializando...
+        <!-- Diagnostic Box -->
+        <div id="diagnostic-box" class="mb-6">
+            <!-- JS generará el contenido aquí -->
         </div>
 
-        <!-- Panel de Ayuda (se muestra si el permiso está OK) -->
-        <div id="ayuda-vibracion" class="hidden mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
-            <h4 class="font-bold">¿No vibra?</h4>
-            <p class="text-sm mt-1">Si la app tiene permiso pero no vibra, es probable que la vibración esté desactivada para este sitio. Toca la notificación y activa el interruptor de "Vibración" en los ajustes de Android.</p>
-        </div>
-
+        <!-- Botón de Vibrar -->
         <div class="mb-6">
             <button id="vibrate-button" class="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg btn-disabled" disabled>
                 Vibrar Ahora
             </button>
         </div>
         
-        <div>
+        <!-- Panel de Ayuda -->
+        <div id="ayuda-vibracion" class="hidden">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">¿No vibra?</h3>
+            <div class="text-xs text-gray-600 bg-yellow-100 p-3 rounded-md space-y-2">
+                <p>Si el registro dice "éxito" pero no vibra, es por los ajustes de tu teléfono.</p>
+                <p>Ve a: <b class="text-black">Ajustes > Aplicaciones > Chrome > Notificaciones > Sitios</b></p>
+                <p>Busca <b class="text-black">"bglfwm-wq.github.io"</b> y activa la <b class="text-black">Vibración</b>.</p>
+            </div>
+        </div>
+
+        <!-- Registro de Eventos -->
+        <div class="mt-4">
             <h3 class="text-sm font-semibold text-gray-600 mb-2 border-b pb-1">Registro de Eventos:</h3>
-            <div id="event-log" class="text-xs text-gray-500 space-y-1 h-32 overflow-y-auto bg-gray-50 p-2 rounded"></div>
+            <div id="event-log" class="text-xs text-gray-500 space-y-1 h-24 overflow-y-auto bg-gray-50 p-2 rounded-md border">
+                <p>Iniciando...</p>
+            </div>
         </div>
     </div>
 
     <script>
-        const vibrateBtn = document.getElementById('vibrate-button');
-        const statusBox = document.getElementById('status-box');
+        const vibrateButton = document.getElementById('vibrate-button');
+        const diagnosticBox = document.getElementById('diagnostic-box');
         const eventLog = document.getElementById('event-log');
-        const helpBox = document.getElementById('ayuda-vibracion');
+        const ayudaPanel = document.getElementById('ayuda-vibracion');
+        let serviceWorker;
 
-        function log(message, isError = false) {
+        function log(message) {
             const time = new Date().toLocaleTimeString();
             const newEntry = document.createElement('p');
             newEntry.className = 'log-entry';
-            if (isError) {
-                newEntry.innerHTML = `<span class="font-mono text-red-500 font-bold">${time}: ${message}</span>`;
-            } else {
-                newEntry.innerHTML = `<span class="font-mono text-gray-400">${time}:</span> ${message}`;
-            }
+            newEntry.innerHTML = `<span class="font-mono text-gray-400">${time}:</span> ${message}`;
             eventLog.prepend(newEntry);
         }
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        log('Service Worker registrado.');
-                        checkPermissions();
-                    })
-                    .catch(error => log(`Error en registro de SW: ${error}`, true));
-            });
-
-            navigator.serviceWorker.addEventListener('message', event => {
-                const message = event.data;
-                if (message && message.type === 'vibration_reply') {
-                    if (message.success) {
-                        log('Respuesta del SW: ¡Vibración enviada con éxito!');
-                    } else {
-                        log(`Respuesta del SW: ¡ERROR! ${message.error}`, true);
-                    }
+        async function registerServiceWorker() {
+            log('Iniciando registro de Service Worker (SW)...');
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('sw.js');
+                    serviceWorker = registration.active || registration.waiting || registration.installing;
+                    log('Service Worker registrado.');
+                    checkNotificationPermission();
+                } catch (error) {
+                    log(`Error en registro de SW: ${error.message}`);
+                    diagnosticBox.innerHTML = `<div class="bg-red-100 text-red-700 p-3 rounded"><p><b>Error Crítico:</b> No se pudo registrar el SW.</p></div>`;
                 }
-            });
-
-        } else {
-            log('Service Worker no soportado.', true);
-        }
-
-        function checkPermissions() {
-            const permission = Notification.permission;
-            if (permission === 'granted') {
-                statusBox.textContent = '✅ Permiso concedido. ¡Listo!';
-                vibrateBtn.disabled = false;
-                vibrateBtn.classList.remove('btn-disabled');
-                helpBox.classList.remove('hidden'); // <-- Muestra la ayuda
-                log('Permiso de notificación ya concedido.');
-            } else if (permission === 'default') {
-                log('Permiso no solicitado. Pidiendo ahora...');
-                statusBox.textContent = 'Solicitando permiso...';
-                Notification.requestPermission().then(checkPermissions);
             } else {
-                statusBox.textContent = '❌ Permiso denegado.';
-                log('Permiso de notificación fue denegado.', true);
+                diagnosticBox.innerHTML = `<div class="bg-red-100 text-red-700 p-3 rounded"><p><b>Error:</b> Service Workers no soportados en este navegador.</p></div>`;
             }
         }
-        
-        vibrateBtn.addEventListener('click', () => {
+
+        function checkNotificationPermission() {
+            if ('Notification' in window) {
+                const permission = Notification.permission;
+                if (permission === 'granted') {
+                    diagnosticBox.innerHTML = `<div class="bg-green-100 text-green-800 p-3 rounded"><p><b>Estado:</b> ✅ Permiso concedido. ¡Listo!</p></div>`;
+                    vibrateButton.disabled = false;
+                    vibrateButton.classList.remove('btn-disabled');
+                    ayudaPanel.classList.remove('hidden');
+                    log('Permiso de notificación ya concedido.');
+                } else if (permission === 'denied') {
+                    diagnosticBox.innerHTML = `<div class="bg-red-100 text-red-700 p-3 rounded"><p><b>Estado:</b> ❌ Permiso denegado. Revisa los ajustes del sitio.</p></div>`;
+                    log('Permiso de notificación denegado.');
+                } else {
+                    diagnosticBox.innerHTML = `<div class="bg-yellow-100 text-yellow-800 p-3 rounded"><p><b>Estado:</b> ⏳ Solicitando permiso...</p></div>`;
+                    log('Solicitando permiso de notificación...');
+                    Notification.requestPermission().then(checkNotificationPermission);
+                }
+            }
+        }
+
+        vibrateButton.addEventListener('click', () => {
             if (navigator.serviceWorker.controller) {
-                log('Enviando mensaje al SW para vibrar...');
-                navigator.serviceWorker.controller.postMessage('vibrate');
+                
+                // Patrón largo de Halloween: (dum-dum... duuummm... ... DUUUUUUUUM)
+                const vibrationPattern = [150, 100, 150, 300, 800, 500, 1500];
+                
+                log('Enviando patrón al Service Worker para vibrar...');
+                
+                // Enviamos el mensaje como un objeto
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'vibrate',
+                    pattern: vibrationPattern
+                });
+                
             } else {
-                log('Error: No se pudo comunicar con el SW.', true);
+                log('Error: El Service Worker no está controlando la página.');
             }
         });
 
+        navigator.serviceWorker.onmessage = (event) => {
+            const data = event.data;
+            if (data.type === 'vibration_reply') {
+                if (data.success) {
+                    log('Respuesta del SW: ¡Notificación de vibración enviada con éxito!');
+                } else {
+                    log(`Respuesta del SW: ¡ERROR! ${data.error}`);
+                }
+            }
+        };
+
+        registerServiceWorker();
     </script>
 </body>
 </html>
