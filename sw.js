@@ -3,10 +3,13 @@ self.addEventListener('message', event => {
 
     if (data && data.type === 'show_alert_notification') {
         
-        // El emoji 🎃 se añade directamente al título
-        const promise = self.registration.showNotification('🎃 ¡Llamada a Votación!', {
-            body: 'Prepárate, eres el siguiente. ¡Tu turno!',
-            // La propiedad 'icon' se elimina, ya no es necesaria
+        const title = '🎃 Llamada a participación.';
+        const body = 'Prepárate eres el siguiente.';
+
+        const promise = self.registration.showNotification(title, {
+            body: body,
+            // Esta línea busca el archivo 'badge.png' que subiste
+            badge: 'badge.png'
         });
 
         promise.then(() => {
