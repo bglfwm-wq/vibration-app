@@ -15,10 +15,16 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        #ayuda-vibracion {
-            animation: fadeIn 0.5s ease-out 0.5s;
-            animation-fill-mode: forwards;
-            opacity: 0;
+        /* Estilos para el menú desplegable */
+        details > summary {
+            cursor: pointer;
+            list-style: none; /* Quita la flecha por defecto */
+        }
+        details > summary::-webkit-details-marker {
+            display: none; /* Quita la flecha en Chrome */
+        }
+        #ayuda-vibracion[open] {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
@@ -30,25 +36,45 @@
             <p class="text-gray-500 text-sm mt-1">La solución definitiva.</p>
         </div>
 
-        <!-- Diagnostic Box --><div id="diagnostic-box" class="mb-6">
-            <!-- JS generará el contenido aquí --></div>
+        <!-- Caja de Diagnóstico -->
+        <div id="diagnostic-box" class="mb-6">
+            <!-- El JS pondrá aquí el estado del permiso -->
+        </div>
 
-        <!-- Botón de Vibrar --><div class="mb-6">
+        <!-- Botón Principal -->
+        <div class="mb-6">
             <button id="vibrate-button" class="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg text-lg btn-disabled" disabled>
                 Vibrar Ahora
             </button>
         </div>
         
-        <!-- Panel de Ayuda --><div id="ayuda-vibracion" class="hidden">
-            <h3 class="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">¿No vibra?</h3>
-            <div class="text-xs text-gray-600 bg-yellow-100 p-3 rounded-md space-y-2">
-                <p>Si la notificación aparece pero no vibra, es por los ajustes de tu teléfono.</p>
-                <p>Ve a: <b class="text-black">Ajustes > Aplicaciones > Chrome > Notificaciones > Sitios</b></p>
-                <p>Busca <b class="text-black">"bglfwm-wq.github.io"</b> y activa la <b class="text-black">Vibración</b>.</p>
-            </div>
+        <!-- === ESTE ES EL CAMBIO === -->
+        <!-- Menú de Ayuda Desplegable -->
+        <!-- Está oculto por defecto y el JS lo mostrará si el permiso está concedido -->
+        <div id="ayuda-container" class="hidden">
+            <details class="bg-yellow-100 rounded-md border border-yellow-300">
+                <!-- Este es el texto corto en el que harás clic -->
+                <summary class="p-3 font-semibold text-yellow-800">
+                    ⚠️ ¿No vibra? Haz clic aquí para ver la ayuda.
+                </summary>
+                
+                <!-- Este es el contenido que se despliega -->
+                <div class="p-3 border-t border-yellow-300 text-xs text-gray-700 space-y-2">
+                    <p>Si la notificación aparece pero no vibra, es por los ajustes de tu teléfono.</p>
+                    <p class="font-semibold">La ruta más rápida (en Chrome):</p>
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>Toca el candado (🔒) en la barra de direcciones.</li>
+                        <li>Toca <b class="text-black">"Permisos"</b> (o "Configuración de sitios").</li>
+                        <li>Toca <b class="text-black">"Notificaciones"</b>.</li>
+                        <li>Activa el interruptor de <b class="text-black">"Vibración"</b>.</li>
+                    </ol>
+                </div>
+            </details>
         </div>
+        <!-- === FIN DEL CAMBIO === -->
 
-        <!-- Registro de Eventos --><div class="mt-4">
+        <!-- Registro de Eventos -->
+        <div class="mt-4">
             <h3 class="text-sm font-semibold text-gray-600 mb-2 border-b pb-1">Registro de Eventos:</h3>
             <div id="event-log" class="text-xs text-gray-500 space-y-1 h-24 overflow-y-auto bg-gray-50 p-2 rounded-md border">
                 <p>Iniciando...</p>
@@ -60,7 +86,7 @@
         const vibrateButton = document.getElementById('vibrate-button');
         const diagnosticBox = document.getElementById('diagnostic-box');
         const eventLog = document.getElementById('event-log');
-        const ayudaPanel = document.getElementById('ayuda-vibracion');
+        const ayudaContainer = document.getElementById('ayuda-container'); // Apuntamos al nuevo contenedor
         let serviceWorker;
 
         function log(message) {
@@ -95,7 +121,8 @@
                     diagnosticBox.innerHTML = `<div class="bg-green-100 text-green-800 p-3 rounded"><p><b>Estado:</b> ✅ Permiso concedido. ¡Listo!</p></div>`;
                     vibrateButton.disabled = false;
                     vibrateButton.classList.remove('btn-disabled');
-                    ayudaPanel.classList.remove('hidden');
+                    // Mostramos el contenedor del menú de ayuda
+                    ayudaContainer.classList.remove('hidden'); 
                     log('Permiso de notificación ya concedido.');
                 } else if (permission === 'denied') {
                     diagnosticBox.innerHTML = `<div class="bg-red-100 text-red-700 p-3 rounded"><p><b>Estado:</b> ❌ Permiso denegado. Revisa los ajustes del sitio.</p></div>`;
@@ -110,13 +137,10 @@
 
         vibrateButton.addEventListener('click', () => {
             if (navigator.serviceWorker.controller) {
-                // Ya no necesitamos vibrationPattern aquí, el SW tiene los detalles del mensaje y el icono.
-                log('Enviando solicitud de notificación al Service Worker...');
-                
+                log('Enviando solicitud de notificación al SW...');
                 navigator.serviceWorker.controller.postMessage({
-                    type: 'show_alert_notification' // Indicamos al SW que muestre la alerta
+                    type: 'show_alert_notification'
                 });
-                
             } else {
                 log('Error: El Service Worker no está controlando la página.');
             }
