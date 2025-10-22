@@ -9,7 +9,7 @@ self.addEventListener('message', event => {
         const promise = self.registration.showNotification(title, {
             body: body,
             badge: 'badge.png', 
-            icon: 'badge.png'
+            icon: 'Icon.png'
         });
 
         promise.then(() => {
