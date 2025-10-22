@@ -54,7 +54,6 @@
             eventLog.prepend(newEntry);
         }
 
-        // 1. Registrar el Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -74,7 +73,6 @@
             statusBox.textContent = 'Service Worker no soportado.';
         }
 
-        // 2. Verificar permisos
         function checkPermissions() {
             if (!('Notification' in window)) {
                 statusBox.textContent = 'Notificaciones no soportadas.';
@@ -99,7 +97,6 @@
             }
         }
         
-        // 3. Enviar mensaje al Service Worker para vibrar
         vibrateBtn.addEventListener('click', () => {
             if (navigator.serviceWorker.controller) {
                 log('Enviando mensaje al Service Worker para vibrar...');
